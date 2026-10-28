@@ -1,6 +1,6 @@
 # Brief: A missed ping is not a "no"
 
-**For:** Helen Achebe (Director of Product) · **From:** Dispatch PM · **Date:** 28 Oct 2026 · **Status:** Draft v2, stress-tested. No code changes until Helen signs off and the blockers below are cleared.
+**For:** Helen Achebe (Director of Product) · **From:** Dispatch PM · **Date:** 28 Oct 2026 · **Status:** Draft v3 (v2 stress-tested, plus review-checklist fixes). No code changes until Helen signs off and the blockers below are cleared.
 
 Sources: Helen's request (`05-super-speed/director-request.txt`), the wiki Glossary, Team directory and 4.2 release page and comments, Priya's handoff, `dispatch-routing/` (`config.py`, `history.py`, `offer.py`, `routing.py`, `availability.py`), and rook-database pings 29 Jun – 7 Sep. **All numbers come from my own queries and are waiting on Ravi's official weekly figures.**
 
@@ -30,9 +30,11 @@ The wiki already treats these as different events. The Glossary says missed and 
 | **Vesper misses a ping** | The ping moves on and Vesper drops in rank without being told. | The ping still moves on. The phone says *"Missed. It's gone to the next responder."* (Wording deliberately makes no promise about ranking. See decision D2.) |
 | **Vesper turns a ping down** | The ping moves on and Vesper drops in rank. | Under review (D3). We can't leave a quick "no" costing more than letting a ping expire. |
 | **Vesper, right now** | Locked out with no pings since early Sep. | The score is recalculated under the new rule. Vesper and Dot are **told when it happens**, not when the next ping arrives: *"Your missed pings were counting against you by mistake. That's been corrected."* |
-| **Aunt Dot / Kip on the console** | Two cards, one silent, and no explanation. | Each card shows *pings this week*, plus *last pinged* if it's been 3+ days. Wording must not suggest a fault when the area simply had no callouts (D5). |
+| **Aunt Dot / Kip on the console** | Two cards, one silent, and no explanation. | Each card shows *pings this week*, plus *last pinged* if it's been 3+ days, and a plain status: **what's happening, why, and what you can do**. It tells apart "keeps missing pings", "isn't being asked" and "just a quiet week in the area". Wording must not suggest a fault when the area simply had no callouts (D5). |
+| **Vesper misses 3 in a row** | Nothing. Vesper sinks quietly. | The console asks Dot "Is Vesper still available?" (the D2 guardrail) with two answers: **keep asking**, or **pause Vesper's pings** for 2 hours, until 08:00, or until Dot turns them back on. Pausing doesn't touch Vesper's score. **Supply impact:** a pause is saved to the Responder Availability Record, which Supply reads (D8). |
+| **Vesper isn't being asked** | Dot has no way to tell or to raise it. | If Vesper is available but was asked about fewer than half of Old Town's callouts that week, the card says so plainly and offers **Report this to Rook**, with those callouts attached. This is how F1 would show up on screen if the list is still being capped after the fix. The threshold is D8. |
 
-Helen asked for "not a setting", so none of this is a control. Handlers and responders can't tune routing (it ships in the release). They can now *see* why someone is quiet, and missing a ping no longer silently costs a responder their place.
+Helen asked for "not a setting", so none of this tunes routing. Handlers and responders can't change scores or weights (they ship in the release). The only new handler actions are confirming or pausing a responder's availability, which handlers can already set today, and reporting a problem. They can now *see* why someone is quiet, and missing a ping no longer silently costs a responder their place.
 
 ## How the fix works
 
@@ -41,14 +43,27 @@ Helen asked for "not a setting", so none of this is a control. Handlers and resp
    - **Neutral would keep Vesper behind.** A neutral reset is 0.5, but under the new rule everyone else sits at 0.76–1.0. Vesper would come back ranked behind any peer about 5–9 minutes further away.
    - **No hand-picked list.** The replay automatically covers Ashgrove, Halfmoon and anyone locked out after our data ends on 7 Sep.
    - It is one recorded run, logged in the Override Audit Log if that log can hold it (Wen to confirm). It is **not a repeatable "reset" button** (see F6).
-3. **Show it.** Add the phone copy, the immediate notice to the affected responders and their handlers, and the console card lines. Sofia owns the wording. Nadia owns replies to the 30 open "phone went quiet" tickets.
+3. **Show it.** Add the phone copy, the immediate notice to the affected responders and their handlers, the console status, the 3-misses prompt with its pause option, and the "isn't being asked" alert. Sofia owns the wording. Nadia owns replies to the 30 open "phone went quiet" tickets.
 4. **Measure it** (Ravi, weekly, before and after):
    - Missed and turned down, **separately**.
    - Pings per week for every responder, not an average.
    - Callouts nobody took, and how many pings each callout went through.
    - Coverage gap, counted separately.
    - How many responders are at the 1.0 ceiling.
-   - **Answer times, which we don't log today.** We need to start logging them first. Without them we can't measure time-to-accept or see what the fix costs.
+   - **Answer times, which we don't log today.** We need to start logging them first (D7). Without them we can't measure time-to-accept or see what the fix costs.
+
+   **What "worked" means.** Starting points are my figures from 29 Jun – 7 Sep; Ravi replaces them with current official numbers before ship (F12). Ravi reports weekly from release, and we decide **4 weeks after release** whether the fix worked, needs the D2 guardrail tuned, or needs the decay work (D4).
+
+   | Measure | Starting point | Target at the 4-week review |
+   |---|---|---|
+   | Responders locked out (available, but asked about fewer than half their home-area callouts for 2+ weeks) | 4 (Vesper, Farlight, Meteor Mite, The Undertow) | **0** |
+   | Pings a week for the four | ~2 combined (was ~51 before 4.2) | Each back within the range of other responders in the same area |
+   | Share of pings missed | ~2% before 4.2, ~12% now | **No higher than ~12%.** The fix doesn't change the 60s race (F5), so a drop isn't the goal; a rise means ghosts (F2). |
+   | Share of pings turned down | Ravi to supply | **No rise.** A rise means people are letting pings expire instead (F4). |
+   | Callouts nobody took | ~8/wk before 4.2, ~13/wk after | **No higher than ~13/wk**, heading back toward ~8 |
+   | "Phone went quiet" tickets | 30 open | No new ones from the four or their handlers after the recalculation |
+
+   The weekly acceptance rate is reported but is **not** the success test on its own (F10).
 
 ## How this could fail or recreate the problem
 
@@ -64,7 +79,7 @@ Helen asked for "not a setting", so none of this is a control. Handlers and resp
 | **F8** | **The Gale doesn't fit the story** | The Gale missed 8 after 4.2 and kept 69 pings. Stormwrack and Nightwell had first weeks as bad as the four and weren't locked out. If the mechanism is only part of the story, the fix only partly works. | Wen to explain before ship. |
 | **F9** | **Where scores live is unclear** | `_scores` is an in-memory dict keyed by cover name, defaulting to 0.5. If production works like this, a restart already resets everyone to 0.5 and a renamed cover loses its history. Either one changes how the recalculation has to work. | Wen and Marcus to confirm how scores are actually stored. |
 | **F10** | **The headline metric drops and looks like a regression** | More pings go to people who sometimes miss, so the share taken can fall even while lockouts end. | Agree with Ravi up front: success is "no responder locked out" plus misses, turn-downs and coverage gap tracked separately, not the weekly acceptance rate on its own. |
-| **F11** | **Supply sees load move without warning** | Pings flow back to four or more responders and away from The Gale and neighbours. Cross-area pings (17% → 39% after 4.2) should fall. Supply books maintenance by callout load. | **Supply impact.** We need a named Supply contact before ship. The Responder Availability Record isn't touched, unless D2's guardrail or F7 changes that. |
+| **F11** | **Supply sees load move without warning** | Pings flow back to four or more responders and away from The Gale and neighbours. Cross-area pings (17% → 39% after 4.2) should fall. Supply books maintenance by callout load. | **Supply impact.** We need a named Supply contact before ship. Routing never writes the Responder Availability Record, but a handler's **pause** from the D2 prompt does, and F7 could add more (D8). |
 | **F12** | **The data is seven weeks old** | Our data ends 7 Sep. 4.3 and 4.4 may have changed routing, and more responders may be locked out now. | Ravi's current numbers, and the 4.3/4.4 release notes, before any decision. |
 
 ## Decisions needed before build
@@ -77,20 +92,23 @@ Helen asked for "not a setting", so none of this is a control. Handlers and resp
 | **D4** | Accept that acceptance history becomes near-inert, or fix earn-back/decay now (F3) | Helen, with Wen | Accept for this release, but decide decay within a quarter |
 | **D5** | Copy for responders, handlers and ticket replies | Sofia, Nadia | Admit the fault, don't promise the race is fixed |
 | **D6** | Release vehicle and owner | Marcus, Helen | The next 4.x train, not "this afternoon". Roadmap owner updated from Priya. |
+| **D7** | Start logging answer times (how long each ping took to be taken, turned down or missed) | Marcus, with Wen | **Dependency.** Ship it before the fix, or at the latest with it, so we have a before/after. Without it the 4-week review can't check time-to-accept or the cost of F2. |
+| **D8** | The handler console additions: the "isn't being asked" alert threshold, and whether a pause writes availability the same way the existing status does | Helen, with Sofia, Wen and the Supply contact | Threshold: available and asked about fewer than half of home-area callouts in a week, with at least 5 callouts. Pause uses the existing availability status, and Supply is told before ship. |
 
 ## What it deliberately does not do
 
 - **Doesn't change the 60s ping wait yet.** It's the next decision (F5), not a closed one.
 - **Doesn't revert the proximity change.** 4.2 cut acceptance weight from 0.40 to 0.25 (`config.py`), so a revert doesn't fix this. Note that F3 means the fix leans further toward proximity anyway.
 - **Doesn't let handlers edit scores** or add a routing setting, and it isn't a repeatable reset (F6).
-- **Doesn't let routing change availability.** The D2 prompt asks the handler. The Responder Availability Record is only written the way it is today.
+- **Doesn't let routing change availability.** The D2 prompt asks the handler. The Responder Availability Record is only written by people, as today; the handler's pause is a new shortcut to that same setting, and it's a **Supply impact** (D8).
 - **Doesn't take on** dark mode, bigger text, mutual aid, or separate alert sounds per responder.
 - **Never uses or infers anyone's identity.** The brief works only with cover identities and callout history (Security Policy 4.1).
 
 ## Next
 
 1. Wen: F1, F8, F9 (and whether handler overrides earn +0.08).
-2. Ravi: current numbers, plus answer-time logging.
-3. Aunt Dot: F7.
-4. Helen: D2–D4 and D6, using this brief.
-5. Sofia: the clickable prototype of the phone and console states above.
+2. Ravi: current numbers to replace the starting points in step 4.
+3. Marcus and Wen: answer-time logging (D7).
+4. Aunt Dot: F7.
+5. Helen: D2–D4, D6 and D8, using this brief.
+6. Sofia: the clickable prototype of the phone and console states above.
