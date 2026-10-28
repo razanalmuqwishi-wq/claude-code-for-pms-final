@@ -28,4 +28,8 @@ What's contradictory or missing, not just in the company documents, but across R
 
 ### 2.
 
+Based on everything you know about Rook Dispatch, what should my top 3 priorities be as the new PM, and why?
+
 ### 3.
+
+1. If I had to make one product decision this week for Rook Dispatch, what decision needs my attention most? Show me the evidence, who I need to involve, and what I still need to clarify.
