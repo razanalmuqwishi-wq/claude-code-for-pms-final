@@ -109,6 +109,23 @@ ul.tight li { margin: 4px 0; }
 .tag.good { background: var(--good-bg); color: var(--good); border-color: transparent; }
 .tag.warn { background: var(--warn-bg); color: var(--warn); border-color: transparent; }
 
+.ev { display: inline-block; font-size: 11px; font-weight: 650; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-3); white-space: nowrap; }
+.ev.obs::before { content: "\25CF  "; color: var(--accent); }
+.ev.rep::before { content: "\25D0  "; color: var(--warn); }
+.ev.est::before { content: "\25CB  "; color: var(--ink-3); }
+.ev.rpt::before { content: "\25C7  "; color: var(--ink-2); }
+.stat .ev { display: block; margin-bottom: 4px; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 18px; align-items: center; font-size: 12.5px; color: var(--ink-2); }
+.legend .ev { font-size: 11px; }
+.ask { border: 2px solid var(--accent); }
+.ask h3 { font-size: 19px; }
+.ask ul { columns: 2; column-gap: 28px; margin-top: 6px; }
+.ask li { break-inside: avoid; }
+.deps .card { padding: 11px 14px; font-size: 14px; }
+.deps .card h3 { display: inline; margin: 0 0 0 6px; font-size: 15px; }
+.deps .card p { margin-top: 5px; }
+@media (max-width: 860px) { .ask ul { columns: 1; } }
+
 .prompt {
   border-left: 4px solid var(--accent); background: var(--accent-bg);
   border-radius: 0 12px 12px 0; padding: 12px 16px;
@@ -201,11 +218,11 @@ pre.code .g { color: #8fd8b0; font-weight: 600; }
   <div class="inner">
     <div class="kicker">Rook Dispatch · Release 4.2 · Decision for Helen</div>
     <h1>A missed ping isn't a “no.”</h1>
-    <p class="lede">Release 4.2 locked four reliable responders out of Dispatch, and no one decided that should happen. Here's what I'd do about it.</p>
+    <p class="lede">After Release 4.2, four previously reliable responders almost stopped being asked. The evidence points to a scoring rule that nobody chose for this, though two dependencies still need confirming. Here's what I'd do about it.</p>
     <div class="grid g3">
-      <div class="card do"><div class="num">1</div><h3>Stop counting misses as turn-downs</h3><p>A ping that runs out just moves to the next responder. It no longer costs the responder −0.12 and their place in line.</p></div>
+      <div class="card do"><div class="num">1</div><h3>Stop counting misses as turn-downs</h3><p>A ping that runs out just moves to the next responder. It no longer costs the responder −0.12 the way a “no” does. Whether a run of misses should cost anything is still open (D2).</p></div>
       <div class="card do"><div class="num">2</div><h3>Recalculate every score by rule</h3><p>One recorded replay of everyone's ping history under the new rule. There's no hand-picked list and no repeatable “reset” button.</p></div>
-      <div class="card do"><div class="num">3</div><h3>Show handlers why someone is quiet</h3><p>Each console card says what's happening, why, and what to do. After 3 misses in a row it asks “still available?”, and it flags “isn't being asked.”</p></div>
+      <div class="card do"><div class="num">3</div><h3>Show handlers why someone is quiet</h3><p>Each console card says what's happening, why, and what to do. I recommend asking “still available?” after 3 misses in a row (D2), plus an “isn't being asked” alert whose threshold is still open (D8).</p></div>
     </div>
     <div class="card flat">
       <div class="keep">
@@ -214,7 +231,7 @@ pre.code .g { color: #8fd8b0; font-weight: 600; }
         <span><b>Before any code:</b> Wen checks nothing else caps the list (D1), Ravi confirms the numbers, and Helen signs off.</span>
       </div>
     </div>
-    <p class="muted">Dispatch PM · 28 Oct 2026 · Product School “Claude Code for PMs” coursework. Rook Industries is fictional. All numbers come from my own rook-database queries (29 Jun – 7 Sep) and are waiting on Ravi's official figures.</p>
+    <p class="muted">Dispatch PM · 28 Oct 2026 · Product School “Claude Code for PMs” coursework. Rook Industries is fictional. Unless labeled otherwise, numbers are <b>observed</b> in my own rook-database queries (29 Jun – 7 Sep). None are official until Ravi confirms them.</p>
   </div>
 </section>
 
@@ -223,18 +240,25 @@ pre.code .g { color: #8fd8b0; font-weight: 600; }
   <div class="inner">
     <div class="kicker">What happened</div>
     <h2>4.2 shipped on 12 Aug with two routing changes at once</h2>
+    <div class="legend"><b>Evidence key:</b>
+      <span class="ev obs">Observed</span><span>counted from rook-database rows</span>
+      <span class="ev rep">Replay</span><span>my model: <code>history.py</code> run over the real pings</span>
+      <span class="ev est">Estimate</span><span>projected, not measured</span>
+      <span class="ev rpt">Reported</span><span>wiki, support or interviews</span>
+      <span class="muted">All database figures are pending Ravi's official numbers.</span>
+    </div>
     <div class="grid g2">
-      <div class="card flat"><h3>Change A: who gets asked first</h3><p>Proximity weight went from 0.45 to 0.60 and acceptance history from 0.40 to 0.25 (<code>config.py</code>).</p></div>
-      <div class="card flat"><h3>Change B: how long a ping waits</h3><p>The ping wait went from <b>90s to 60s</b>. Pings moved on after 61–63s from release day, down from 92–93s.</p></div>
+      <div class="card flat"><span class="ev rpt">Code · config.py</span><h3>Change A: who gets asked first</h3><p>Proximity weight went from 0.45 to 0.60 and acceptance history from 0.40 to 0.25 (<code>config.py</code>).</p></div>
+      <div class="card flat"><span class="ev obs">Observed</span><h3>Change B: how long a ping waits</h3><p>The ping wait went from <b>90s to 60s</b>. Pings moved on after 61–63s from release day, down from 92–93s.</p></div>
     </div>
     <div class="grid g4">
-      <div class="card stat"><div class="v hl-bad">2% → 23%</div><div class="l">Pings missed, the week before vs release week</div><div class="s">Still about 12%</div></div>
-      <div class="card stat"><div class="v hl-bad">51 → 2</div><div class="l">Pings a week for 4 responders combined</div><div class="s">Farlight, Meteor Mite, The Undertow, Vesper</div></div>
-      <div class="card stat"><div class="v">~3×</div><div class="l">Support tickets</div><div class="s">107 since release, 83 still open</div></div>
-      <div class="card stat"><div class="v">8 → 13</div><div class="l">Callouts nobody took, per week</div><div class="s">97 in total after 4.2</div></div>
+      <div class="card stat"><span class="ev obs">Observed</span><div class="v hl-bad">2% → 23%</div><div class="l">Pings missed, the week before vs release week</div><div class="s">Still about 12% at 7 Sep</div></div>
+      <div class="card stat"><span class="ev obs">Observed</span><div class="v hl-bad">51 → 2</div><div class="l">Pings a week for 4 responders combined</div><div class="s">Farlight, Meteor Mite, The Undertow, Vesper</div></div>
+      <div class="card stat"><span class="ev rpt">Reported · support</span><div class="v">~3×</div><div class="l">Support tickets vs normal</div><div class="s">Observed: 107 since release, 83 still open</div></div>
+      <div class="card stat"><span class="ev obs">Observed</span><div class="v">8 → 13</div><div class="l">Callouts nobody took, per week</div><div class="s">97 in total after 4.2</div></div>
     </div>
     <div class="card">
-      <p><b>The handoff called it “a seasonal August dip, don't revert.” The data doesn't fit that.</b> The share of pings taken was 75–78% every week through 3 Aug, then fell to 54% in the release week alone. Ping volume barely moved (24.7 → 23.5 a day), so the change came from what happened to each ping, not from how many pings went out.</p>
+      <p><b>The handoff called it “a seasonal August dip, don't revert.” The data doesn't fit that.</b> The share of pings taken was 75–78% every week through 3 Aug, then fell to 54% in the release week alone. Ping volume barely moved (24.7 → 23.5 a day), so the change came from what happened to each ping, not from how many pings went out. In this deck, “locked out” means <b>available but almost never asked</b>. It describes what the data shows. The full cause still needs Wen to confirm it (F1).</p>
     </div>
   </div>
 </section>
@@ -246,14 +270,14 @@ pre.code .g { color: #8fd8b0; font-weight: 600; }
     <h2>Vesper took 81% of pings. Then the phone stopped ringing.</h2>
     <div class="split">
       <div class="card">
-        <h3>Vesper's pings per week (real rows from rook-database)</h3>
+        <span class="ev obs">Observed</span><h3>Vesper's pings per week (real rows from rook-database)</h3>
         <svg class="chart" id="vesperChart" viewBox="0 0 560 250" role="img" aria-label="Vesper's weekly pings: 14, 12, 5, 2, 1, then 0 from 2 to 6 September"></svg>
         <p class="muted">The number under each bar is how many of Old Town's callouts Vesper was asked about. Old Town is Vesper's home area.</p>
       </div>
       <div class="grid">
-        <div class="card flat"><p><b>Before 4.2:</b> Vesper went 23 pings in a row without a miss, the best record of the four.</p></div>
-        <div class="card flat"><p><b>Release week:</b> Vesper took every Old Town ping but missed 4 out-of-area ones. The last accepted ping was on 17 Aug.</p></div>
-        <div class="card flat"><p><b>Aunt Dot (Vesper's handler)</b> told Sofia the ping is “gone to somebody else already.” Neither of them filed a ticket, and neither knows the misses caused the silence.</p></div>
+        <div class="card flat"><p><b>Before 4.2:</b> Vesper took 81% of pings, the best of the four, and went 23 pings in a row without a miss.</p></div>
+        <div class="card flat"><p><b>Release week:</b> Vesper took every Old Town ping but missed 4 out-of-area ones. The last accepted ping was on 17 Aug. From 19 Aug Vesper also missed 4 of 5 <i>home</i> pings, so I need to ask Aunt Dot whether Vesper's availability changed (F7).</p></div>
+        <div class="card flat"><p><b>Aunt Dot (Vesper's handler)</b> told Sofia the ping is “gone to somebody else already.” Neither of them filed a ticket, and no one has told them the misses may explain the silence.</p></div>
         <p class="muted">Vesper is one of four. The other three went the same way.</p>
       </div>
     </div>
@@ -294,12 +318,12 @@ pre.code .g { color: #8fd8b0; font-weight: 600; }
     <h2>The tickets and the interviews were describing different problems</h2>
     <div class="split">
       <div class="card">
-        <h3>147 support tickets, grouped</h3>
+        <span class="ev obs">Observed</span><h3>147 support tickets, grouped by subject line</h3>
         <svg class="chart" id="ticketChart" viewBox="0 0 560 190" role="img" aria-label="Ticket groups: 30 phone went quiet, 15 gone before I could answer, 16 saved filters, 26 Supply, 60 older console friction"></svg>
         <div class="vs" style="margin-top:8px">
           <div class="card flat"><b>Loud in interviews</b><br><span class="muted">Sofia, 4 handlers</span><ul class="tight"><li>“Gone too fast”: 3 of 4</li><li>“Tell the handler when a callout comes in”: 3 of 4, and <b>0 tickets</b></li></ul></div>
           <div class="arrow">≠</div>
-          <div class="card flat"><b>Loud in tickets</b><br><span class="muted">11 handlers who weren't interviewed</span><ul class="tight"><li>“Phone went quiet”: 30 tickets, from just 4 responders</li><li>Only 2 of 4 interviewees mentioned quiet</li></ul></div>
+          <div class="card flat"><b>Loud in tickets</b><br><span class="muted">11 handlers who weren't interviewed</span><ul class="tight"><li>“Phone went quiet”: 30 tickets about just 4 responders (Farlight, The Undertow, Ashgrove, Halfmoon)</li><li>Only 2 of 4 interviewees mentioned quiet</li></ul></div>
         </div>
       </div>
       <div class="grid">
@@ -307,7 +331,7 @@ pre.code .g { color: #8fd8b0; font-weight: 600; }
           <q>You've now read both piles. Where do they disagree? What's loud in the interviews but rare in the tickets, and what's all over the tickets that nobody brought up in the interviews?</q>
           <div class="why">Asking where the sources disagree, instead of asking for a summary, is what surfaced the lockout.</div>
         </div>
-        <div class="card flat"><p><b>Result:</b> only Ambrose appears in both piles. The interviews underweight the lockout, and the tickets show it's the bigger problem. Many tickets repeat word for word, so I'll ask Nadia whether they come from a macro.</p></div>
+        <div class="card flat"><p><b>Result:</b> only Ambrose appears in both piles. The interviews underweight the lockout, and the tickets suggest it's the bigger problem. Many tickets repeat word for word, so I'll ask Nadia whether they come from a macro.</p></div>
       </div>
     </div>
   </div>
@@ -321,9 +345,9 @@ pre.code .g { color: #8fd8b0; font-weight: 600; }
     <div class="split">
       <div class="grid">
         <div class="grid g3">
-          <div class="card stat"><div class="v">Day 1</div><div class="l">The change was immediate</div><div class="s">Misses a day: 3 the week before, 7 on 12 Aug, 12 on 13 Aug</div></div>
-          <div class="card stat"><div class="v">2.4% → 15.5%</div><div class="l">Median miss rate, every responder</div><div class="s">Everyone missed more</div></div>
-          <div class="card stat"><div class="v hl-bad">−66 to −75%</div><div class="l">Pings for the locked-out 4</div><div class="s">The other 12 got <span class="hl-good">16–43% more</span></div></div>
+          <div class="card stat"><span class="ev obs">Observed</span><div class="v">Day 1</div><div class="l">The change was immediate</div><div class="s">Misses a day: 3 the week before, 7 on 12 Aug, 12 on 13 Aug</div></div>
+          <div class="card stat"><span class="ev obs">Observed</span><div class="v">2.4% → 15.5%</div><div class="l">Median miss rate per responder, before vs after 12 Aug</div><div class="s">Everyone missed more</div></div>
+          <div class="card stat"><span class="ev obs">Observed</span><div class="v hl-bad">−66 to −75%</div><div class="l">Pings for the locked-out 4</div><div class="s">The other 12 got <span class="hl-good">16–43% more</span></div></div>
         </div>
         <div class="card">
           <div class="vs">
@@ -368,7 +392,7 @@ def record_declined(responder):
           <div><b>Lower rank</b>Fewer pings</div>
           <div><b>No ping</b>No chance to say yes</div>
         </div>
-        <p class="muted">Nothing else adds points: no decay, no reset, no manual edit anywhere in the code. Replaying <code>history.py</code> over the real pings drives <b>exactly these four</b> to 0 between 27 Aug and 5 Sep. With misses free, none of them is locked out.</p>
+        <p class="muted"><span class="ev rpt">Code</span> Nothing else in <code>dispatch-routing/</code> adds points: no decay, no reset, no manual edit. <span class="ev rep">Replay</span> Replaying <code>history.py</code> over the real pings drives <b>exactly these four</b> to 0 between 27 Aug and 5 Sep. With misses free, none of the four falls to 0. These are modeled scores. Production scores aren't in the data (F9).</p>
       </div>
       <div class="grid">
         <div class="card sim" id="sim">
@@ -390,7 +414,7 @@ def record_declined(responder):
         </div>
         <div class="prompt"><div class="who">My strongest prompt</div>
           <q>Could someone reach a point where their score is too low to receive pings, but receiving and accepting a ping is the only way to improve their score? If yes, show me exactly how that happens in the code, step by step.</q>
-          <div class="why">It turned a hunch into a mechanism I could check, and it answered Marcus: this was never a decision. First-week misses decided who got locked out, not past turn-down rate.</div>
+          <div class="why">It turned a hunch into a mechanism I could check. It also addressed Marcus's question: the data shows no sign the change targeted past decliners. First-week misses line up with who lost pings, and past turn-down rate doesn't.</div>
         </div>
       </div>
     </div>
@@ -409,26 +433,26 @@ def record_declined(responder):
           <table>
             <tr><th>Risk</th><th>What the brief does</th></tr>
             <tr><td><b>F1</b> Something outside the code caps the list. 40 of 49 unfilled callouts ended after one ping.</td><td><span class="tag bad">Blocker</span> Wen finds it before we commit.</td></tr>
-            <tr><td><b>F2</b> A free miss creates “ghost” responders who waste 60s on every callout.</td><td>After 3 misses in a row, the console asks the handler “Still available?”</td></tr>
-            <tr><td><b>F3</b> Everyone hits the 1.0 ceiling, so ranking becomes “nearest first.”</td><td>Helen decides (D4). Decide decay within a quarter.</td></tr>
+            <tr><td><b>F2</b> A free miss creates “ghost” responders who waste 60s on every callout.</td><td>My recommendation (D2): after 3 misses in a row, the console asks the handler “Still available?”</td></tr>
+            <tr><td><b>F3</b> <span class="ev rep">Replay</span> Everyone hits the 1.0 ceiling, so ranking becomes “nearest first.”</td><td>Helen decides (D4). Decide decay within a quarter.</td></tr>
             <tr><td><b>F4</b> If a “no” costs more than ignoring a ping, people learn to ignore pings.</td><td>A turn-down costs no more than a miss (D3).</td></tr>
           </table>
         </div>
         <div class="card flat">
           <h3>What “worked” means, judged 4 weeks after release</h3>
           <table>
-            <tr><th>Measure</th><th class="r">Now</th><th class="r">Target</th></tr>
+            <tr><th>Measure</th><th class="r">Start <span class="ev obs">Observed to 7 Sep</span></th><th class="r">Target <span class="ev est">Proposed</span></th></tr>
             <tr><td>Responders locked out</td><td class="r">4</td><td class="r"><b>0</b></td></tr>
             <tr><td>Share of pings missed</td><td class="r">~12%</td><td class="r">≤ ~12%</td></tr>
             <tr><td>Callouts nobody took, per week</td><td class="r">~13</td><td class="r">≤ ~13, heading to 8</td></tr>
           </table>
-          <p class="muted" style="margin-top:6px">The weekly acceptance rate isn't the test on its own (F10). Answer-time logging (D7) has to ship first so time-to-accept can be measured.</p>
+          <p class="muted" style="margin-top:6px">Ravi replaces the starting points with current official figures before ship (F12). The weekly acceptance rate isn't the test on its own (F10). Answer-time logging (D7) has to ship first so time-to-accept can be measured.</p>
         </div>
       </div>
       <div class="grid">
         <div class="prompt"><div class="who">My strongest prompt</div>
           <q>Before we build this, challenge the proposed fix. What edge cases, unintended consequences, or unanswered decisions could cause it to fail or recreate the same problem in a different way? Update the brief where needed.</q>
-          <div class="why">It changed the plan. A neutral reset to 0.5 would have left Vesper behind peers at 0.76–1.0, so the brief now recalculates every score by rule.</div>
+          <div class="why">It changed the plan. In my replay, a neutral reset to 0.5 would have left Vesper behind peers at 0.76–1.0, so the brief now recalculates every score by rule.</div>
         </div>
         <div class="card flat">
           <h3>What it deliberately doesn't do</h3>
@@ -460,13 +484,13 @@ def record_declined(responder):
         <div class="card flat"><h3>Click through</h3>
           <ul class="tight">
             <li><b>1 · Before vs after:</b> Vesper's situation in plain words</li>
-            <li><b>2 · Week by week:</b> Vesper's real pings, under today's rules and the fix</li>
+            <li><b>2 · Week by week:</b> Vesper's real pings under today's rules, and an <i>estimate</i> of what the fix would have changed</li>
             <li><b>3 · Try it as Aunt Dot:</b> miss 3 in a row and see the “Still available?” prompt and the “pause pings” option</li>
           </ul>
         </div>
         <div class="prompt"><div class="who">My strongest prompt</div>
           <q>Now look at this as the person responsible for this responder. Is it obvious that something is wrong, why it happened, and what I can do about it? If not, improve the prototype so I can understand the situation and take the appropriate action from the screen.</q>
-          <div class="why">This added the status panel, the “isn't being asked” alert and Report to Rook. All three are now in the brief.</div>
+          <div class="why">This added the status panel, the “isn't being asked” alert and Report to Rook. All three are now in the brief. Figures marked “estimate” in the prototype are projections, not data.</div>
         </div>
       </div>
     </div>
@@ -503,20 +527,32 @@ def record_declined(responder):
   </div>
 </section>
 
-<!-- 11 · NEXT -->
-<section class="slide" data-title="What I need">
-  <div class="inner">
-    <div class="kicker">What I need to ship it</div>
-    <h2>Five conversations stand between this brief and the code</h2>
-    <div class="grid g3">
-      <div class="card"><span class="tag bad">Blocker</span><h3 style="margin-top:8px">Wen</h3><p>Why do callouts stop after one ping (F1)? Why was The Gale fine after 8 misses (F8)? And where do scores actually live (F9)?</p></div>
-      <div class="card"><span class="tag">Numbers</span><h3 style="margin-top:8px">Ravi</h3><p>Official weekly figures to replace mine. My data stops on 7 Sep, so I also need to check 4.3 and 4.4.</p></div>
-      <div class="card"><span class="tag">Dependency</span><h3 style="margin-top:8px">Marcus and Wen</h3><p>Start logging answer times (D7) before or with the fix, so we get a before and after.</p></div>
-      <div class="card"><span class="tag">Ask</span><h3 style="margin-top:8px">Aunt Dot</h3><p>From 19 Aug, Vesper missed 4 of 5 home pings. Did Vesper's availability change (F7)?</p></div>
-      <div class="card"><span class="tag warn">Supply impact</span><h3 style="margin-top:8px">A named Supply contact</h3><p>Pings will move back to the four, and the handler “pause” writes availability. Nobody on Supply is named anywhere yet.</p></div>
-      <div class="card do"><span class="tag good">Decision</span><h3 style="margin-top:8px">Helen</h3><p>What a miss costs (D2), turn-down parity (D3), ceiling vs decay (D4), the release train (D6) and the console alert (D8).</p></div>
+<!-- 11 · DECISION + NEXT -->
+<section class="slide" data-title="The ask">
+  <div class="inner" style="gap:12px">
+    <div class="kicker">The ask</div>
+    <h2>Helen: approve the direction now, and we build only once the blockers clear</h2>
+    <div class="card ask">
+      <span class="tag good">Decision for Helen today</span>
+      <h3>Agree that a missed ping should stop counting as a “no,” together with a one-time, rule-based score recalculation and the handler console additions.</h3>
+      <p>This is a decision on direction, not a go-ahead to change <code>history.py</code>. Along with it, please decide:</p>
+      <ul class="tight">
+        <li><b>D2</b> What a miss costs. I recommend no score penalty, with a “still available?” prompt after 3 in a row.</li>
+        <li><b>D3</b> Make a turn-down cost no more than a miss. I recommend doing it in the same change.</li>
+        <li><b>D4</b> Accept that acceptance history barely counts for this release, and decide on decay within a quarter.</li>
+        <li><b>D6</b> Ship it on the next 4.x train, and move roadmap ownership from Priya.</li>
+        <li><b>D8</b> The “isn't being asked” alert threshold, and whether “pause” writes availability. <span class="tag warn">Supply impact</span></li>
+      </ul>
     </div>
-    <p class="lede" style="max-width:none"><b>The ask today:</b> agree that a missed ping stops counting as a “no,” and let me clear the blockers above before anyone touches <code>history.py</code>.</p>
+    <h3 style="margin:4px 0 0">Before implementation: conversations and dependencies</h3>
+    <div class="grid g3 deps">
+      <div class="card"><span class="tag bad">Blocker</span><h3>Wen</h3><p>Why do most unfilled callouts stop after one ping (F1)? Until this is answered, the score fix alone may not bring pings back. Also why The Gale stayed ranked (F8), and where scores actually live (F9).</p></div>
+      <div class="card"><span class="tag">Confirm the numbers</span><h3>Ravi</h3><p>Official weekly figures to confirm the lockout and replace my starting points. My data stops on 7 Sep, so also check what 4.3 and 4.4 changed (F12).</p></div>
+      <div class="card"><span class="tag">Dependency</span><h3>Marcus and Wen</h3><p>Answer-time logging (D7), before or with the fix. Without it we can't measure time-to-accept or prove that the 60s wait caused the misses.</p></div>
+      <div class="card"><span class="tag">Ask</span><h3>Aunt Dot</h3><p>Vesper missed 4 of 5 home pings from 19 Aug. Did Vesper's availability change (F7)?</p></div>
+      <div class="card"><span class="tag warn">Supply impact</span><h3>A named Supply contact</h3><p>Ping load will shift back to the four, and the handler “pause” writes the Responder Availability Record (F11, D8). Nobody on Supply is named yet.</p></div>
+      <div class="card"><span class="tag">Wording</span><h3>Sofia and Nadia</h3><p>Copy for responders, handlers and the 30 open “phone went quiet” tickets: admit the fault, and don't promise the race is fixed (D5).</p></div>
+    </div>
   </div>
 </section>
 
@@ -655,7 +691,7 @@ def record_declined(responder):
     $("simLog").textContent = log.join(" ");
     const m = $("simMsg");
     m.classList.toggle("bad", locked);
-    if (locked) m.textContent = "Locked out. You're last in line, so no ping arrives, and without a ping you can't press “Take one.” Nothing in the code adds points any other way.";
+    if (locked) m.textContent = "Locked out. You're last in line, so no ping arrives, and without a ping you can't press “Take one.” Nothing in the routing code adds points any other way.";
     else if (rules === "fix" && log.length) m.textContent = "Under the fix, a miss costs nothing. The ping just goes to the next responder, and the score stays where it is.";
     else if (!log.length) m.textContent = rules === "today" ? "Under 4.2 rules, press “Miss a ping” five times." : "Under the fix, try “Miss a ping” again.";
     else m.textContent = "Each miss costs −0.12, the same as a “no.” A “yes” is worth only +0.08.";
