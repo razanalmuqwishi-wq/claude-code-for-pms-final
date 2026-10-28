@@ -24,6 +24,8 @@ prompt library built from your own questions.
 
 ### 1.
 
+What's contradictory or missing, not just in the company documents, but across Rook's wiki, its database, and the files in my repo?
+
 ### 2.
 
 ### 3.
