@@ -16,6 +16,10 @@ prompt library built from your own questions.
 
 ### 1.
 
+Use the rook-database connector. Call describe_table on support_tickets, then run_query. There are 147 tickets. Same treatment as before: group them, tell me how many are in each group, and quote one line from each. Count every row, including ones that look unrelated.
+
 ### 2.
+
+You've now read both piles. Where do they disagree? What's loud in the interviews but rare in the tickets, and what's all over the tickets that nobody brought up in the interviews?
 
 ### 3.
