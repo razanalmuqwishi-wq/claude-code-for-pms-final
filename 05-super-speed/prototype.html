@@ -1,0 +1,955 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vesper Lockout Prototype</title>
+<style>
+:root {
+  --bg: #f4f2ee;
+  --surface: #ffffff;
+  --surface-2: #f8f7f4;
+  --ink: #1d1c1a;
+  --ink-2: #5e5b55;
+  --ink-3: #8b877f;
+  --line: #e2ded6;
+  --accent: #2f5bd3;
+  --accent-ink: #ffffff;
+  --good: #1f7a4d;
+  --good-bg: #e5f3eb;
+  --warn: #9a5b00;
+  --warn-bg: #fdf1dc;
+  --bad: #b3372f;
+  --bad-bg: #fbe7e5;
+  --note: #6a3fb5;
+  --note-bg: #efe8fa;
+  --phone: #121212;
+  --phone-screen: #fbfaf8;
+  --shadow: 0 1px 2px rgba(0,0,0,.06), 0 8px 24px rgba(0,0,0,.06);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #151514; --surface: #1f1e1c; --surface-2: #262522; --ink: #f1efea; --ink-2: #b9b5ad; --ink-3: #8a867e;
+    --line: #34322e; --accent: #7b9cff; --accent-ink: #0d1530; --good: #6fd19c; --good-bg: #1c3127;
+    --warn: #f0b860; --warn-bg: #3a2c14; --bad: #ff8f86; --bad-bg: #3d1f1c; --note: #c3a6f5; --note-bg: #2c2340;
+    --phone: #000; --phone-screen: #1a1918; --shadow: 0 1px 2px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.3);
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #151514; --surface: #1f1e1c; --surface-2: #262522; --ink: #f1efea; --ink-2: #b9b5ad; --ink-3: #8a867e;
+  --line: #34322e; --accent: #7b9cff; --accent-ink: #0d1530; --good: #6fd19c; --good-bg: #1c3127;
+  --warn: #f0b860; --warn-bg: #3a2c14; --bad: #ff8f86; --bad-bg: #3d1f1c; --note: #c3a6f5; --note-bg: #2c2340;
+  --phone: #000; --phone-screen: #1a1918; --shadow: 0 1px 2px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.3);
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--bg); color: var(--ink);
+  font: 15px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, sans-serif;
+}
+button { font: inherit; cursor: pointer; }
+.wrap { max-width: 1180px; margin: 0 auto; padding: 24px 16px 48px; }
+
+header h1 { font-size: 22px; margin: 0 0 4px; letter-spacing: -.01em; }
+header p { margin: 0; color: var(--ink-2); max-width: 780px; }
+
+.toolbar { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin: 18px 0 12px; }
+.seg { display: flex; gap: 4px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 4px; flex-wrap: wrap; }
+.seg button { border: 0; background: none; color: var(--ink-2); padding: 7px 12px; border-radius: 7px; }
+.seg.parts { flex-wrap: nowrap; }
+.seg.parts button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); }
+.seg.sub button[aria-pressed="true"] { background: var(--surface-2); color: var(--ink); box-shadow: inset 0 0 0 1px var(--line); }
+.seg.rules button[data-rules="today"][aria-pressed="true"] { background: var(--bad-bg); color: var(--bad); }
+.seg.rules button[data-rules="fix"][aria-pressed="true"] { background: var(--good-bg); color: var(--good); }
+.toggle { display: flex; gap: 6px; align-items: center; color: var(--ink-2); font-size: 14px; margin-left: auto; }
+.weekbar { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-bottom: 12px; }
+.weekbar .lbl { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--ink-3); }
+.weeks button { position: relative; }
+.weeks button .rel { display: block; font-size: 10.5px; color: var(--warn); line-height: 1; margin-top: 2px; }
+.narration { background: var(--surface); border: 1px solid var(--line); border-left: 4px solid var(--accent); border-radius: 10px; padding: 12px 16px; margin-bottom: 20px; }
+.narration.today { border-left-color: var(--bad); }
+.narration.fix { border-left-color: var(--good); }
+.narration strong { display: block; margin-bottom: 2px; }
+.narration .est { display: block; margin-top: 6px; font-size: 13px; color: var(--ink-3); }
+
+.stage { display: grid; grid-template-columns: 320px 1fr; gap: 24px; align-items: start; }
+.col-label { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--ink-3); margin: 0 0 8px; }
+
+/* Phone */
+.phone { width: 300px; height: 600px; background: var(--phone); border-radius: 40px; padding: 12px; box-shadow: var(--shadow); margin: 0 auto; }
+.screen { position: relative; height: 100%; background: var(--phone-screen); border-radius: 30px; overflow: hidden; display: flex; flex-direction: column; }
+.statusbar { display: flex; justify-content: space-between; padding: 12px 22px 6px; font-size: 12px; color: var(--ink-2); }
+.app-top { padding: 8px 20px 12px; border-bottom: 1px solid var(--line); }
+.app-top .who { font-weight: 650; font-size: 17px; }
+.pill { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; padding: 2px 8px; border-radius: 99px; background: var(--good-bg); color: var(--good); }
+.pill.off { background: var(--surface-2); color: var(--ink-3); }
+.pill::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.app-body { flex: 1; padding: 16px; display: flex; flex-direction: column; gap: 12px; overflow: auto; }
+.empty { margin: auto 0; text-align: center; color: var(--ink-3); }
+.empty .big { font-size: 34px; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 14px; }
+.notice { background: var(--good-bg); border-color: transparent; }
+.notice b { color: var(--good); }
+.ping { border: 2px solid var(--accent); }
+.ping .meta, .moment .meta { font-size: 13px; color: var(--ink-2); }
+.ping h3, .moment h3 { margin: 4px 0 2px; font-size: 16px; }
+.moment.gone { background: var(--surface-2); color: var(--ink-3); }
+.moment.gone h3 { text-decoration: line-through; }
+.moment .status { margin-top: 10px; font-weight: 600; color: var(--ink); }
+.moment .status small { display: block; font-weight: 400; color: var(--ink-2); }
+.ring { display: flex; align-items: center; gap: 10px; margin: 12px 0; }
+.ring svg { width: 52px; height: 52px; transform: rotate(-90deg); }
+.ring .track { stroke: var(--line); }
+.ring .bar { stroke: var(--accent); transition: stroke-dashoffset .1s linear; }
+.ring .secs { font-variant-numeric: tabular-nums; font-size: 22px; font-weight: 650; }
+.ring small { display: block; color: var(--ink-3); font-size: 11px; }
+.btn-row { display: flex; gap: 8px; }
+.btn { flex: 1; border: 1px solid var(--line); background: var(--surface); color: var(--ink); padding: 10px; border-radius: 10px; font-weight: 600; }
+.btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.btn.ghost { background: none; color: var(--ink-2); border-style: dashed; font-weight: 500; font-size: 13px; }
+.btn:focus-visible, .seg button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.result { text-align: center; padding: 18px 14px; }
+.result .big { font-size: 30px; }
+.result.taken { background: var(--good-bg); border-color: transparent; }
+.result.missed, .result.turned { background: var(--surface-2); }
+.phone-actions { margin-top: auto; display: flex; flex-direction: column; gap: 8px; }
+
+/* Console */
+.console { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; box-shadow: var(--shadow); overflow: hidden; }
+.console-top { display: flex; align-items: center; gap: 12px; padding: 10px 16px; border-bottom: 1px solid var(--line); background: var(--surface-2); }
+.dots { display: flex; gap: 6px; } .dots i { width: 10px; height: 10px; border-radius: 50%; background: var(--line); display: block; }
+.url { flex: 1; font-size: 12px; color: var(--ink-3); background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 3px 10px; }
+.console-body { display: grid; grid-template-columns: 170px 1fr; min-height: 520px; }
+.side { border-right: 1px solid var(--line); padding: 14px 10px; font-size: 14px; color: var(--ink-2); }
+.side .brand { font-weight: 700; color: var(--ink); padding: 0 8px 12px; }
+.side a { display: block; padding: 6px 8px; border-radius: 6px; color: inherit; text-decoration: none; }
+.side a.on { background: var(--surface-2); color: var(--ink); font-weight: 600; }
+.main { padding: 18px; display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.main h2 { margin: 0; font-size: 18px; }
+.main .sub { color: var(--ink-3); font-size: 13px; margin-top: -10px; }
+.rcard { border: 1px solid var(--line); border-radius: 12px; padding: 14px; background: var(--surface); display: flex; flex-direction: column; gap: 12px; max-width: 520px; }
+.rcard .row { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.rcard .name { font-weight: 650; font-size: 16px; }
+.rcard .area { font-size: 13px; color: var(--ink-3); }
+.stats { display: flex; gap: 22px; flex-wrap: wrap; }
+.stat .n { font-size: 24px; font-weight: 650; font-variant-numeric: tabular-nums; line-height: 1.1; }
+.stat .l { font-size: 12px; color: var(--ink-3); }
+.stat .n.quiet { color: var(--warn); }
+.stat .n.est { color: var(--ink-2); font-style: italic; }
+.spark { display: flex; align-items: flex-end; gap: 6px; height: 46px; }
+.spark div { flex: 1; background: var(--line); border-radius: 3px 3px 0 0; position: relative; min-height: 2px; }
+.spark div.on { background: var(--accent); }
+.spark div.est { background: repeating-linear-gradient(45deg, var(--line), var(--line) 3px, transparent 3px, transparent 6px); border: 1px dashed var(--ink-3); border-bottom: 0; }
+.spark div.est.on { border-color: var(--accent); }
+.spark-l { display: flex; gap: 6px; font-size: 10.5px; color: var(--ink-3); }
+.spark-l span { flex: 1; text-align: center; }
+.banner { border-radius: 10px; padding: 10px 12px; font-size: 13.5px; }
+.banner.good { background: var(--good-bg); }
+.banner.good b { color: var(--good); }
+.banner.warn { background: var(--warn-bg); }
+.banner.warn b { color: var(--warn); }
+.banner.none { background: var(--surface-2); color: var(--ink-3); font-style: italic; }
+.banner .btn-row { margin-top: 10px; }
+.banner .btn { padding: 7px; font-size: 13px; }
+.flash { animation: flash 1.2s ease-out; }
+@keyframes flash { from { box-shadow: 0 0 0 3px var(--accent); } to { box-shadow: 0 0 0 0 transparent; } }
+.feed { border-top: 1px solid var(--line); padding-top: 12px; }
+.feed h4 { margin: 0 0 8px; font-size: 13px; color: var(--ink-3); font-weight: 600; text-transform: uppercase; letter-spacing: .05em; }
+.feed ol { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; font-size: 13.5px; max-height: 210px; overflow: auto; }
+.feed li { display: flex; gap: 10px; }
+.feed time { color: var(--ink-3); font-variant-numeric: tabular-nums; min-width: 82px; white-space: nowrap; }
+.feed .o-taken { color: var(--good); font-weight: 600; }
+.feed .o-missed { color: var(--warn); font-weight: 600; }
+.feed .o-turned { color: var(--ink-2); font-weight: 600; }
+.feed .none { color: var(--ink-3); }
+
+/* Behind the scenes */
+.bts { margin-top: 24px; background: var(--note-bg); border-radius: 12px; padding: 14px 16px; }
+.bts h3 { margin: 0 0 4px; font-size: 14px; color: var(--note); }
+.bts p { margin: 0 0 10px; font-size: 13px; color: var(--ink-2); }
+.bts-grid { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+.chart svg { width: 100%; height: auto; display: block; }
+.chart .axis { stroke: color-mix(in srgb, var(--note) 25%, transparent); }
+.chart text { fill: var(--ink-3); font-size: 10px; }
+.chart .l-today { stroke: var(--bad); }
+.chart .l-fix { stroke: var(--good); }
+.chart .rel { stroke: var(--warn); stroke-dasharray: 3 3; }
+.chart .sel { fill: var(--note); opacity: .12; }
+.legend { display: flex; gap: 14px; font-size: 12px; color: var(--ink-2); margin-top: 4px; flex-wrap: wrap; }
+.legend i { display: inline-block; width: 14px; height: 3px; border-radius: 2px; vertical-align: middle; margin-right: 5px; }
+.facts { font-size: 13.5px; display: flex; flex-direction: column; gap: 8px; }
+.facts div { display: flex; justify-content: space-between; gap: 10px; border-top: 1px solid color-mix(in srgb, var(--note) 20%, transparent); padding-top: 6px; }
+.facts b { font-variant-numeric: tabular-nums; }
+.tag { display: inline-block; font-size: 11px; font-weight: 700; color: var(--note); background: var(--note-bg); border-radius: 5px; padding: 1px 6px; margin-left: 6px; vertical-align: middle; white-space: nowrap; font-style: normal; }
+body.hide-refs .tag, body.hide-refs .bts { display: none; }
+[hidden] { display: none !important; }
+
+/* Handler status panel */
+.status { border-radius: 12px; padding: 12px 14px; border: 1px solid var(--line); background: var(--surface-2); }
+.status.s-good { background: var(--good-bg); border-color: transparent; }
+.status.s-warn { background: var(--warn-bg); border-color: transparent; }
+.status.s-bad { background: var(--bad-bg); border-color: transparent; }
+.status.s-paused, .status.s-neutral { background: var(--surface-2); }
+.s-title { font-weight: 700; font-size: 15.5px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.s-icon { width: 22px; height: 22px; border-radius: 50%; display: inline-grid; place-items: center; font-size: 13px; color: var(--surface); background: var(--ink-3); flex-shrink: 0; }
+.s-good .s-icon { background: var(--good); } .s-good .s-title { color: var(--good); }
+.s-warn .s-icon { background: var(--warn); } .s-warn .s-title { color: var(--warn); }
+.s-bad .s-icon { background: var(--bad); } .s-bad .s-title { color: var(--bad); }
+.status dl { margin: 10px 0 0; display: grid; grid-template-columns: 120px 1fr; gap: 6px 12px; font-size: 14px; }
+.status dt { color: var(--ink-3); font-size: 12px; text-transform: uppercase; letter-spacing: .04em; padding-top: 2px; }
+.status dd { margin: 0; }
+.status .acts { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.status .acts .btn { flex: 0 1 auto; padding: 8px 12px; font-size: 13.5px; }
+.status .acts .lead { font-size: 13.5px; color: var(--ink-2); }
+.status .hint, .status .none-needed, .status .done { margin: 6px 0 0; font-size: 13px; color: var(--ink-2); }
+.status .none-needed { margin: 0; }
+.status .done { margin: 0; color: var(--ink); font-weight: 600; }
+.stat .of { font-size: 14px; color: var(--ink-3); font-weight: 500; }
+.scen { margin-top: 10px; }
+@media (max-width: 600px) { .status dl { grid-template-columns: 1fr; } }
+
+/* Before vs after */
+.headline { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 18px 20px; margin-bottom: 18px; box-shadow: var(--shadow); }
+.headline p { margin: 0; font-size: 17px; line-height: 1.5; max-width: 860px; }
+.headline p + p { margin-top: 8px; font-size: 15px; color: var(--ink-2); }
+.cmp { display: grid; grid-template-columns: 190px 1fr 1fr; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; box-shadow: var(--shadow); }
+.cmp > div { padding: 14px 16px; border-top: 1px solid var(--line); }
+.cmp .hd { border-top: 0; font-weight: 700; font-size: 15px; display: flex; align-items: center; gap: 8px; }
+.cmp .hd.today { background: var(--bad-bg); color: var(--bad); }
+.cmp .hd.fix { background: var(--good-bg); color: var(--good); }
+.cmp .q { font-weight: 600; color: var(--ink-2); font-size: 14px; background: var(--surface-2); }
+.cmp .today-c { border-left: 1px solid var(--line); }
+.cmp .fix-c { border-left: 1px solid var(--line); }
+.cmp .big { font-size: 26px; font-weight: 700; line-height: 1.15; font-variant-numeric: tabular-nums; }
+.cmp .today-c .big { color: var(--bad); }
+.cmp .fix-c .big { color: var(--good); }
+.cmp .say { font-size: 14px; background: var(--surface-2); border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; margin-top: 4px; font-style: italic; }
+.cmp small { display: block; color: var(--ink-3); font-size: 12.5px; margin-top: 4px; }
+.cmp .same { grid-column: 2 / 4; border-left: 1px solid var(--line); background: var(--warn-bg); }
+.strip { display: flex; flex-direction: column; gap: 6px; }
+.strip .wk { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--ink-3); }
+.strip .wk > span:first-child { width: 72px; flex-shrink: 0; }
+.strip .dots { display: flex; flex-wrap: wrap; gap: 3px; }
+.strip .d { flex-shrink: 0; width: 11px; height: 11px; border-radius: 50%; border: 1.5px solid var(--ink-3); }
+.strip .d.y { background: var(--accent); border-color: var(--accent); }
+.strip .d.e { border: 1.5px dashed var(--accent); background: repeating-linear-gradient(45deg, color-mix(in srgb, var(--accent) 35%, transparent) 0 2px, transparent 2px 4px); }
+.strip .n { margin-left: auto; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.key { display: flex; flex-wrap: wrap; gap: 12px; font-size: 12px; color: var(--ink-3); margin-top: 10px; }
+.key i { display: inline-block; width: 10px; height: 10px; border-radius: 50%; vertical-align: -1px; margin-right: 4px; }
+.next { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 18px; }
+.next .btn { flex: 0 1 auto; padding: 10px 16px; }
+
+@media (max-width: 900px) {
+  .cmp { grid-template-columns: 1fr; }
+  .cmp .hd.q-blank { display: none; }
+  .cmp .today-c, .cmp .fix-c, .cmp .same { border-left: 0; grid-column: auto; }
+  .cmp .today-c::before { content: "Today: "; font-weight: 700; color: var(--bad); font-size: 12px; text-transform: uppercase; letter-spacing: .05em; display: block; }
+  .cmp .fix-c::before { content: "With the fix: "; font-weight: 700; color: var(--good); font-size: 12px; text-transform: uppercase; letter-spacing: .05em; display: block; }
+  .cmp .hd.today, .cmp .hd.fix { display: none; }
+}
+
+@media (max-width: 900px) {
+  .stage, .bts-grid { grid-template-columns: 1fr; }
+  .console-body { grid-template-columns: 1fr; }
+  .side { display: none; }
+  .toggle { margin-left: 0; }
+  .seg.parts { flex-wrap: wrap; }
+}
+@media (max-width: 360px) { .phone { width: 100%; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Vesper and Aunt Dot: what 4.2 did, and what the fix changes</h1>
+    <p>A clickable prototype for the Dispatch brief (<code>brief.md</code>). Vesper's phone app is on the left and Aunt Dot's web console is on the right. Every ping in "What happened" is real, taken from rook-database (3 Aug – 6 Sep). Anything marked <em>estimate</em> is not. Numbers are pending Ravi's official figures.</p>
+  </header>
+
+  <div class="toolbar">
+    <div class="seg parts" role="group" aria-label="Part" id="parts">
+      <button data-part="compare">1 · Before vs after</button>
+      <button data-part="story">2 · Week by week</button>
+      <button data-part="live">3 · Try it as Aunt Dot</button>
+    </div>
+    <label class="toggle"><input type="checkbox" id="refs" checked> Show brief references</label>
+  </div>
+
+  <div class="weekbar" id="weekbar">
+    <span class="lbl">Week</span>
+    <div class="seg sub weeks" role="group" aria-label="Week" id="weeks"></div>
+    <span class="lbl">Rules</span>
+    <div class="seg rules" role="group" aria-label="Routing rules" id="rules">
+      <button data-rules="today">Today's rules</button>
+      <button data-rules="fix">If the fix had been live</button>
+    </div>
+  </div>
+
+  <section id="compare" aria-label="Vesper before and after the fix">
+    <div class="headline">
+      <p><b>Before the fix,</b> a few pings that ran out before Vesper could answer quietly counted as Vesper saying no. Each one pushed Vesper further down the list, until Vesper's phone stopped ringing altogether, and nothing let Vesper back in.</p>
+      <p><b>After the fix,</b> a ping that runs out simply goes to the next person. It doesn't count against Vesper, so Vesper keeps getting asked. Vesper and Aunt Dot can also see what's happening.</p>
+    </div>
+
+    <div class="cmp">
+      <div class="hd q-blank"></div>
+      <div class="hd today today-c">Before the fix (what happened)</div>
+      <div class="hd fix fix-c">After the fix</div>
+
+      <div class="q">How often Vesper's phone rings</div>
+      <div class="today-c"><div class="big">14 → 1 a week</div>Then <b>nothing at all</b> from 2 to 6 Sep.<small>Real pings, 3 Aug – 6 Sep</small></div>
+      <div class="fix-c"><div class="big">≈13–15 a week</div>About Vesper's normal, the same as before August.<small>Estimate. Wen still needs to confirm nothing else is holding Vesper back (F1).</small></div>
+
+      <div class="q">Old Town callouts Vesper was asked to take</div>
+      <div class="today-c"><div class="strip" id="stripToday"></div></div>
+      <div class="fix-c"><div class="strip" id="stripFix"></div></div>
+
+      <div class="q">When a ping runs out before Vesper answers</div>
+      <div class="today-c">It counts the same as Vesper saying <b>no</b>. A handful of these and Vesper drops to the bottom of the list.</div>
+      <div class="fix-c">It goes to the next responder, and <b>that's all</b>. Vesper's place in line doesn't change.</div>
+
+      <div class="q">What Vesper's phone says</div>
+      <div class="today-c"><div class="say">"This callout is no longer available."</div><small>No reason, and no hint that it costs anything.</small></div>
+      <div class="fix-c"><div class="say">"Missed. It's gone to the next responder. Missing a ping doesn't work like saying no."</div></div>
+
+      <div class="q">What Aunt Dot sees</div>
+      <div class="today-c">A number getting smaller. <b>No reason why.</b> Aunt Dot noticed the quiet weeks but "couldn't tell you why."</div>
+      <div class="fix-c">A plain status on Vesper's card: <b>what's happening, why, and what to do</b>. It tells apart "Vesper keeps missing pings", "Vesper isn't being asked" and "it's just a quiet week".</div>
+
+      <div class="q">What Aunt Dot can do about it</div>
+      <div class="today-c"><b>Nothing on the screen.</b> Wait, or email support. One handler did, which support said "never happens".</div>
+      <div class="fix-c">One click, depending on the cause: <b>keep asking Vesper</b>, <b>pause Vesper's pings</b> while Vesper's away, or <b>report it to Rook</b> with the evidence attached.</div>
+
+      <div class="q">How Vesper gets back in</div>
+      <div class="today-c"><b>Can't.</b> Only taking a job brings Vesper back up the list, and that needs a ping that never comes.</div>
+      <div class="fix-c">Never gets stuck in the first place. On the day the fix ships, Vesper's place is corrected and <b>Vesper and Aunt Dot are told</b>.</div>
+
+      <div class="q">What stays the same</div>
+      <div class="same">Vesper still has <b>60 seconds</b> to answer, so Vesper can still lose the race to the phone that Aunt Dot described. That's the next decision, not this fix.</div>
+    </div>
+    <div class="key">
+      <span><i style="background:var(--accent)"></i>Vesper was asked</span>
+      <span><i style="border:1.5px solid var(--ink-3)"></i>Went to someone else without asking Vesper</span>
+      <span><i style="border:1.5px dashed var(--accent)"></i>Expected to be asked with the fix (estimate)</span>
+    </div>
+    <div class="next">
+      <button class="btn" data-part="story">See it week by week →</button>
+      <button class="btn primary" data-part="live">Try it as Aunt Dot →</button>
+    </div>
+  </section>
+
+  <div class="narration" id="narration"></div>
+
+  <div class="stage" id="stage">
+    <div>
+      <p class="col-label">Vesper's phone app</p>
+      <div class="phone"><div class="screen">
+        <div class="statusbar"><span id="clock">21:14</span><span>Rook</span></div>
+        <div class="app-top">
+          <div class="who">Vesper</div>
+          <span class="pill" id="phonePill"></span>
+        </div>
+        <div class="app-body" id="phoneBody"></div>
+      </div></div>
+    </div>
+
+    <div>
+      <p class="col-label">Aunt Dot's web console</p>
+      <div class="console">
+        <div class="console-top"><div class="dots"><i></i><i></i><i></i></div><div class="url">console.rook.example / roster</div></div>
+        <div class="console-body">
+          <nav class="side" aria-label="Console">
+            <div class="brand">Rook Dispatch</div>
+            <a class="on" href="#" onclick="return false">My roster</a>
+            <a href="#" onclick="return false">Callouts</a>
+            <a href="#" onclick="return false">Coverage report</a>
+            <a href="#" onclick="return false">Supply</a>
+          </nav>
+          <div class="main">
+            <h2>Aunt Dot's roster</h2>
+            <div class="sub" id="consoleSub"></div>
+            <div id="card"></div>
+            <div class="feed">
+              <h4 id="feedTitle">Vesper's pings</h4>
+              <ol id="feed"></ol>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <section class="bts" id="bts" aria-label="Behind the scenes">
+    <h3>Behind the scenes (for Helen, not shown to Aunt Dot or Vesper)</h3>
+    <p>Vesper's recent-acceptance score, replayed over Vesper's real pings under both rules. Nobody can see or edit it, but it decides Vesper's place in line.</p>
+    <div class="bts-grid">
+      <div class="chart">
+        <svg id="chart" viewBox="0 0 520 190" role="img" aria-label="Vesper's score by week under today's rules and with the fix"></svg>
+        <div class="legend"><span><i style="background:var(--bad)"></i>Today's rules (miss = "no")</span><span><i style="background:var(--good)"></i>With the fix (miss costs nothing)</span><span><i style="background:var(--warn)"></i>4.2 ships, 12 Aug</span></div>
+      </div>
+      <div class="facts" id="facts"></div>
+    </div>
+  </section>
+</div>
+
+<script>
+const PING_WAIT = 60;        // seconds, unchanged by this fix (F5)
+const SPEEDUP = 10;          // the live part runs the ping wait 10x faster
+const STREAK_PROMPT = 3;     // D2: ask the handler after this many misses in a row
+const EXPECTED = "13–15";    // Vesper's normal weekly pings before 4.2 (13–15 a week, 29 Jun – 9 Aug)
+
+// Vesper's score at the end of each week, replayed over the real pings (rook-database).
+const SCORE_WEEKS = ["29 Jun", "6 Jul", "13 Jul", "20 Jul", "27 Jul", "3 Aug", "10 Aug", "17 Aug", "24 Aug", "31 Aug"];
+const SCORE_TODAY = [0.88, 1.00, 1.00, 1.00, 0.88, 0.96, 0.68, 0.28, 0.04, 0.00];
+const SCORE_FIX   = [0.88, 1.00, 1.00, 1.00, 0.88, 0.96, 1.00, 0.88, 0.76, 0.76];
+
+// Vesper's real pings, 10 Aug – 6 Sep. Outcome: T taken, D turned down, M missed.
+const PINGS = [
+  ["10 Aug 02:01", 40938, "Old Town",  "A mime is painting the town hall green", "T"],
+  ["10 Aug 13:33", 40945, "Old Town",  "A clown is redirecting traffic on the ring road", "D"],
+  ["11 Aug 21:00", 40975, "Old Town",  "A man with a very large magnet has stopped the ferry", "T"],
+  ["13 Aug 07:34", 40992, "Lakeshore", "A retired stage magician has the keys to the tram yard", "M"],
+  ["14 Aug 02:53", 41006, "Old Town",  "A retired stage magician has stopped the ferry", "T"],
+  ["14 Aug 17:10", 41017, "Hillcrest", "A trained flock of pigeons has flooded the underpass", "M"],
+  ["15 Aug 13:02", 41023, "Old Town",  "Someone on a mechanical ostrich is releasing the zoo animals", "T"],
+  ["15 Aug 15:33", 41026, "Midtown",   "Someone dressed as a lighthouse has locked the clock tower", "D"],
+  ["15 Aug 20:58", 41034, "Old Town",  "The Lantern Society is removing the courthouse doors", "T"],
+  ["16 Aug 10:46", 41039, "Hillcrest", "Someone in a beekeeping suit is emptying a bank", "M"],
+  ["16 Aug 14:05", 41042, "Hillcrest", "A self-declared time traveller is removing the courthouse doors", "M"],
+  ["16 Aug 16:03", 41043, "Old Town",  "A retired stage magician won't leave the museum roof", "T"],
+  ["17 Aug 08:55", 41050, "Old Town",  "Someone on stilts is painting the town hall green", "T"],
+  ["19 Aug 18:42", 41102, "Old Town",  "A retired stage magician has jammed the market radios", "M"],
+  ["23 Aug 00:10", 41153, "Old Town",  "A 'statue' is lifting parked cars outside the stadium", "M"],
+  ["23 Aug 05:34", 41155, "Midtown",   "Someone dressed as a lighthouse is painting the town hall", "D"],
+  ["23 Aug 20:15", 41165, "Lakeshore", "A retired lion tamer has the keys to the tram yard", "M"],
+  ["24 Aug 21:40", 41186, "Old Town",  "Someone dressed as a lighthouse is climbing the TV mast", "D"],
+  ["26 Aug 18:09", 41214, "Old Town",  "A sit-in in a brass diving suit at the power station", "M"],
+  ["1 Sep 11:42",  41311, "Old Town",  "A retired lion tamer has barricaded the public library", "M"],
+];
+
+const WEEKS = [
+  { id: "w0803", label: "3–9 Aug", short: "3 Aug", from: null, pings: 14, taken: 12, turned: 2, missed: 0, scoreIdx: 5,
+    oldTown: [12, 12], lastPing: "8 Aug", asOf: "Sun 9 Aug",
+    phone: { kind: "idle" },
+    today: "A normal week. Vesper takes 12 of 14 pings and is offered every one of the 12 Old Town callouts. Nothing to see on either screen, which is how it should be.",
+    fix: "Same as today. The fix only changes what a miss costs, and Vesper didn't miss any." },
+  { id: "w0810", label: "10–16 Aug", short: "10 Aug", rel: "4.2 ships", from: "10 Aug", to: "16 Aug", pings: 12, taken: 6, turned: 2, missed: 4, scoreIdx: 6,
+    oldTown: [7, 7], lastPing: "16 Aug", asOf: "Sun 16 Aug",
+    phone: { kind: "gone", ping: 10 },
+    today: "4.2 cuts the ping wait to 60s on Wednesday. Vesper misses 4 of the next 9 pings, all outside Old Town (Lakeshore, Hillcrest ×3), and still takes every Old Town ping. Each miss costs −0.12, the same as a no. Aunt Dot's console looks fine: 12 pings, 6 taken.",
+    fix: "Same 4 misses, which the fix doesn't prevent (F5). But they cost nothing, so Vesper ends the week at 1.00 instead of 0.68. Vesper's phone says what happened instead of the ping just vanishing." },
+  { id: "w0817", label: "17–23 Aug", short: "17 Aug", from: "17 Aug", to: "23 Aug", pings: 5, taken: 1, turned: 1, missed: 3, scoreIdx: 7,
+    oldTown: [8, 3], lastPing: "23 Aug", asOf: "Sun 23 Aug",
+    phone: { kind: "gone", ping: 14 },
+    today: "Pings drop from 12 to 5. Old Town had 8 callouts, and only 3 were offered to Vesper. Vesper takes one on 17 Aug, which turns out to be Vesper's last. From 19 Aug Vesper misses Old Town pings too (F7: ask Aunt Dot why). Aunt Dot can see the count fall, but nothing says why.",
+    fix: "Vesper ends the week at 0.88, still near the top for Old Town. The home misses from 19 Aug would still happen. They're F7, Vesper's own availability, not the score." },
+  { id: "w0824", label: "24–30 Aug", short: "24 Aug", from: "24 Aug", to: "30 Aug", pings: 2, taken: 0, turned: 1, missed: 1, scoreIdx: 8,
+    oldTown: [12, 2], lastPing: "26 Aug", asOf: "Sun 30 Aug",
+    phone: { kind: "gone", ping: 18 },
+    today: "2 pings. 12 Old Town callouts went past Vesper and 10 were never offered. The score is 0.04, so Vesper ranks behind anyone a few minutes further away. Aunt Dot sees a quiet week and has no way to tell why.",
+    fix: "The score holds at 0.76. Vesper would still be offered most home callouts." },
+  { id: "w0831", label: "31 Aug–6 Sep", short: "31 Aug", from: "31 Aug", to: "6 Sep", pings: 1, taken: 0, turned: 0, missed: 1, scoreIdx: 9,
+    oldTown: [14, 1], lastPing: "1 Sep", asOf: "Sun 6 Sep",
+    phone: { kind: "quiet", days: 5 },
+    today: "Locked out. The score hit 0.00, and only a yes can lift it, which needs a ping that never comes. 14 Old Town callouts, 1 offered. Nothing at all from 2 to 6 Sep. Vesper and Aunt Dot filed no tickets.",
+    fix: "The score is still 0.76, and pings would continue at roughly the normal rate. That's an estimate: F1 says something outside the scoring may also be capping who gets asked, so check with Wen." },
+];
+
+let state;
+
+function freshLive() {
+  return { scenario: "fix", nextCallout: 41420, ping: null, result: null, ack: false, pingsWeek: 0, lastDays: 5, score: 0.00,
+    streak: 0, available: true, away: null, showPause: false, reported: null, areaCallouts: 0, asked: 0, recent: [],
+    fixed: false, scoreNote: "0.00 since 1 Sep. Only a yes can lift it.", feed: [] };
+}
+
+state = { part: "compare", week: 0, rules: "today", live: freshLive() };
+
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const tag = (t) => `<span class="tag">${t}</span>`;
+const OUT = { T: ["Taken", "o-taken"], D: ["Turned down", "o-turned"], M: ["Missed", "o-missed"] };
+
+function weekPings(w) {
+  if (!w.from) return [];
+  const day = (s) => { const [d, m] = s.split(" "); return (m === "Sep" ? 31 : 0) + +d; };
+  return PINGS.filter((p) => day(p[0]) >= day(w.from) && day(p[0]) <= day(w.to));
+}
+
+/* ---------- part 1: the story ---------- */
+
+function renderStory() {
+  const w = WEEKS[state.week];
+  const fix = state.rules === "fix";
+  const after = state.week >= 1;
+  const score = (fix ? SCORE_FIX : SCORE_TODAY)[w.scoreIdx];
+
+  $("narration").className = "narration " + (fix ? "fix" : "today");
+  $("narration").innerHTML = `<strong>${w.label}: ${fix ? "if the fix had been live" : "what actually happened"}${fix && after ? tag("estimate after 12 Aug") : ""}</strong>${esc(fix ? w.fix : w.today)}`;
+
+  // Phone: the moment that defines Vesper's week
+  $("clock").textContent = w.asOf.split(" ").slice(1).join(" ");
+  $("phonePill").className = "pill";
+  $("phonePill").textContent = "Available · Old Town";
+  let ph = "";
+  if (w.phone.kind === "idle") {
+    ph = `<div class="card result taken"><div class="big">✓</div><b>It's yours.</b><br>Callout taken. 12 of 14 this week.</div>`;
+  } else if (w.phone.kind === "gone") {
+    const p = PINGS[w.phone.ping];
+    ph = `<div class="card moment gone"><div class="meta">${p[0]} · callout #${p[1]} · ${p[2]}</div><h3>${esc(p[3])}</h3></div>`;
+    ph += fix
+      ? `<div class="card notice"><b>Missed. It's gone to the next responder.</b><br>Missing a ping doesn't work like saying no.${tag("D2 · D5")}</div>`
+      : `<div class="card"><div class="status">This callout is no longer available.<small>That's all Vesper is told today. No reason, and no hint it costs Vesper's place.</small></div></div>`;
+  } else {
+    ph = fix
+      ? `<div class="empty"><div class="big">✓</div>You're in the rotation.<br><span style="font-size:13px">Pings at about the usual rate.${tag("estimate · F1")}</span></div>`
+      : `<div class="empty"><div class="big">…</div>No pings.<br><span style="font-size:13px">Last one ${w.phone.days} days ago.<br>Nothing says why.</span></div>`;
+  }
+  $("phoneBody").innerHTML = ph;
+
+  // Console card
+  $("consoleSub").textContent = `Roster · ${w.label} · as of ${w.asOf}`;
+  const pingsN = fix && after ? `≈${EXPECTED}` : w.pings;
+  const quiet = !fix && w.pings <= 5;
+  let stats = `<div class="stat"><div class="n ${quiet ? "quiet" : ""} ${fix && after ? "est" : ""}">${pingsN}</div><div class="l">pings this week</div></div>`;
+  if (!(fix && after)) stats += `<div class="stat"><div class="n">${w.taken}</div><div class="l">taken</div></div><div class="stat"><div class="n ${w.missed >= 3 ? "quiet" : ""}">${w.missed}</div><div class="l">missed</div></div>`;
+  if (fix && !after) stats += `<div class="stat"><div class="n">${w.taken}</div><div class="l">taken</div></div>`;
+
+  let spark = "";
+  WEEKS.forEach((x, i) => {
+    const estBar = fix && i >= 1;
+    const val = estBar ? 14 : x.pings;
+    spark += `<div class="${i === state.week ? "on" : ""} ${estBar ? "est" : ""}" style="height:${Math.max(4, (val / 15) * 100)}%" title="${x.label}: ${estBar ? "≈" + EXPECTED + " (estimate)" : x.pings + " pings"}"></div>`;
+  });
+  const sparkL = WEEKS.map((x) => `<span>${x.short}</span>`).join("");
+
+  let banner;
+  if (!fix) {
+    banner = w.pings <= 5
+      ? `<div class="banner none">This is everything Aunt Dot's console shows today. There's no warning, no reason, and nothing to click.${tag("Problem")}</div>`
+      : "";
+  } else if (after) {
+    banner = `<div class="banner good"><b>New on the card:</b> pings this week, plus "days since last ping" once it reaches 3. If Vesper ever went quiet again for another reason (F1, F7), Aunt Dot would see it here instead of guessing.${tag("Fix step 3")}</div>`;
+  } else banner = "";
+
+  $("card").innerHTML = `<div class="rcard" id="vcard">
+    <div class="row"><div><div class="name">Vesper</div><div class="area">Old Town</div></div><span class="pill">Available</span></div>
+    <div class="stats">${stats}</div>
+    <div><div class="spark">${spark}</div><div class="spark-l">${sparkL}</div></div>
+    ${banner}
+  </div>`;
+
+  // Feed: Vesper's real pings that week
+  $("feedTitle").textContent = `Vesper's pings · ${w.label}`;
+  const list = weekPings(w);
+  let feed = list.map((p) => {
+    const [txt, cls] = OUT[p[4]];
+    const cost = p[4] === "M" ? (fix ? " · no cost" : " · −0.12") : p[4] === "D" ? " · −0.12" : " · +0.08";
+    return `<li><time>${p[0]}</time><span><span class="${cls}">${txt}</span> · #${p[1]} · ${esc(p[2])}${tag("score" + cost)}</span></li>`;
+  }).join("");
+  if (!list.length) feed = `<li class="none">14 pings, 12 taken. A normal week.</li>`;
+  if (w.id === "w0831") feed += `<li class="none"><time>2–6 Sep</time><span>No pings.</span></li>`;
+  if (fix && after) feed = `<li class="none">The pings below are what really happened. With the fix the misses wouldn't cost anything, and later weeks would have more pings than shown.</li>` + feed;
+  $("feed").innerHTML = feed;
+
+  // Behind the scenes
+  renderChart(w.scoreIdx);
+  $("facts").innerHTML = `
+    <div><span>Score at end of ${w.label}</span><b>${score.toFixed(2)}</b></div>
+    <div><span>Under the other rule</span><b>${(fix ? SCORE_TODAY : SCORE_FIX)[w.scoreIdx].toFixed(2)}</b></div>
+    <div><span>Old Town callouts that week</span><b>${w.oldTown[0]}</b></div>
+    <div><span>…offered to Vesper</span><b>${w.oldTown[1]}</b></div>
+    <div><span>Vesper's last ping</span><b>${w.lastPing}</b></div>`;
+
+  document.querySelectorAll("#weeks button").forEach((b, i) => b.setAttribute("aria-pressed", String(i === state.week)));
+  document.querySelectorAll("#rules button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.rules === state.rules)));
+}
+
+function renderChart(sel) {
+  const W = 520, H = 190, L = 30, R = 10, T = 10, B = 26;
+  const n = SCORE_WEEKS.length;
+  const x = (i) => L + (i * (W - L - R)) / (n - 1);
+  const y = (v) => T + (1 - v) * (H - T - B);
+  const path = (arr) => arr.map((v, i) => `${i ? "L" : "M"}${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(" ");
+  const relX = x(5) + (x(6) - x(5)) * (2 / 7); // Wed 12 Aug inside the 10 Aug week
+  let s = "";
+  [0, 0.5, 1].forEach((v) => { s += `<line class="axis" x1="${L}" x2="${W - R}" y1="${y(v)}" y2="${y(v)}"/><text x="${L - 6}" y="${y(v) + 3}" text-anchor="end">${v.toFixed(1)}</text>`; });
+  s += `<rect class="sel" x="${x(sel) - 14}" y="${T}" width="28" height="${H - T - B}" rx="4"/>`;
+  s += `<line class="rel" x1="${relX}" x2="${relX}" y1="${T}" y2="${H - B}"/>`;
+  s += `<path class="l-fix" d="${path(SCORE_FIX)}" fill="none" stroke-width="2.5"/>`;
+  s += `<path class="l-today" d="${path(SCORE_TODAY)}" fill="none" stroke-width="2.5"/>`;
+  SCORE_WEEKS.forEach((w, i) => { if (i % 2 === 1 || i === n - 1) s += `<text x="${x(i)}" y="${H - 8}" text-anchor="middle">${w}</text>`; });
+  s += `<circle cx="${x(sel)}" cy="${y(SCORE_TODAY[sel])}" r="4" style="fill:var(--bad)"/><circle cx="${x(sel)}" cy="${y(SCORE_FIX[sel])}" r="4" style="fill:var(--good)"/>`;
+  $("chart").innerHTML = s;
+}
+
+/* ---------- part 3: live, after the fix ships ---------- */
+
+// What Aunt Dot's console can be showing, after the fix is live.
+const SCENARIOS = {
+  fix:      { label: "The fix ships" },
+  missing:  { label: "Vesper keeps missing pings" },
+  notasked: { label: "Vesper isn't being asked" },
+  quiet:    { label: "A quiet week in Old Town" },
+};
+
+function liveLog(text) {
+  const t = new Date().toTimeString().slice(0, 5);
+  state.live.feed.unshift({ t: "today " + t, text });
+}
+
+function shipFix() {
+  const L = state.live;
+  L.fixed = true;
+  L.score = 0.76;
+  L.scoreNote = "Recalculated by rule: 0.00 → 0.76. One recorded run in the Override Audit Log, not a button.";
+  liveLog("Vesper's missed pings were counting against Vesper by mistake. Corrected today.");
+}
+
+function setScenario(key) {
+  stopTimer();
+  state.live = freshLive();
+  const L = state.live;
+  L.scenario = key;
+  shipFix();
+  if (key === "fix") { render(); return; }
+  L.ack = true;
+  if (key === "missing") {
+    [["T", 41402], ["T", 41405], ["M", 41409], ["M", 41413], ["M", 41417]].forEach(([o, n]) => {
+      L.pingsWeek++; L.areaCallouts++; L.asked++;
+      L.recent.push({ n, o });
+      liveLog(o === "T" ? `Vesper took callout #${n}.` : `Vesper missed #${n}. The 60 seconds ran out and it went to the next responder.`);
+    });
+    L.streak = 3; L.lastDays = 0;
+    L.result = { kind: "missed", callout: 41417 };
+    L.scoreNote = "3 misses in a row: still no score change. Aunt Dot is asked instead (D2).";
+  } else if (key === "notasked") {
+    L.pingsWeek = 1; L.lastDays = 5; L.areaCallouts = 14; L.asked = 1;
+    L.recent.push({ n: 41311, o: "M" });
+    liveLog("Vesper missed #41311. The 60 seconds ran out and it went to the next responder.");
+    L.scoreNote = "Score is fine (0.76), yet Vesper still isn't asked. Something else is filtering Vesper out (F1). The score fix alone can't catch this, so the console flags it.";
+  } else if (key === "quiet") {
+    L.pingsWeek = 3; L.lastDays = 2; L.areaCallouts = 3; L.asked = 3;
+    [41380, 41386, 41391].forEach((n) => { L.recent.push({ n, o: "T" }); liveLog(`Vesper took callout #${n}.`); });
+    L.scoreNote = "Nothing wrong. The area was just quiet.";
+  }
+  render();
+}
+
+function sendPing() {
+  stopTimer();
+  const L = state.live;
+  if (!L.available) { render(); return; }
+  const n = L.nextCallout++;
+  const p = PINGS[Math.floor(Math.random() * PINGS.length)];
+  L.result = null;
+  L.ping = { callout: n, area: "Old Town", what: p[3], left: PING_WAIT };
+  L.pingsWeek += 1;
+  L.areaCallouts += 1;
+  L.asked += 1;
+  L.lastDays = 0;
+  liveLog(`Ping to Vesper: callout #${n}, Old Town.`);
+  L.ping.timer = setInterval(() => {
+    L.ping.left -= 1;
+    if (L.ping.left <= 0) answer("missed");
+    else renderLivePhone();
+  }, 1000 / SPEEDUP);
+  render();
+}
+
+function stopTimer() {
+  const L = state.live;
+  if (L.ping && L.ping.timer) clearInterval(L.ping.timer);
+}
+
+function answer(kind) {
+  stopTimer();
+  const L = state.live;
+  const n = L.ping.callout;
+  L.ping = null;
+  L.result = { kind, callout: n };
+  L.recent.push({ n, o: { taken: "T", turned: "D", missed: "M" }[kind] });
+  if (kind === "taken") {
+    L.score = Math.min(1, L.score + 0.08);
+    L.streak = 0;
+    L.scoreNote = `Took #${n}: +0.08.`;
+    liveLog(`Vesper took callout #${n}.`);
+  } else if (kind === "turned") {
+    L.streak = 0;
+    L.scoreNote = `Turned down #${n}. Penalty pending decision D3: a "no" must not cost more than a miss.`;
+    liveLog(`Vesper turned down #${n}. It went to the next responder.`);
+  } else {
+    L.streak += 1;
+    L.scoreNote = `Missed #${n}: no change. A miss no longer counts as a "no".`;
+    liveLog(`Vesper missed #${n}. The 60 seconds ran out and it went to the next responder.`);
+  }
+  render();
+  flashCard();
+}
+
+function simulateMisses() {
+  stopTimer();
+  const L = state.live;
+  L.ping = null;
+  while (L.streak < STREAK_PROMPT) {
+    const n = L.nextCallout++;
+    L.pingsWeek += 1; L.areaCallouts += 1; L.asked += 1;
+    L.streak += 1;
+    L.recent.push({ n, o: "M" });
+    liveLog(`Vesper missed #${n}. The 60 seconds ran out and it went to the next responder.`);
+  }
+  L.scoreNote = `${L.streak} misses in a row: still no score change. Aunt Dot is asked instead (D2).`;
+  L.result = { kind: "missed", callout: L.nextCallout - 1 };
+  render();
+  flashCard();
+}
+
+/* Handler actions */
+
+function keepAsking() {
+  const L = state.live;
+  L.streak = 0;
+  L.showPause = false;
+  liveLog("Aunt Dot confirmed Vesper is around. Pings continue.");
+  render();
+}
+
+function pauseUntil(label) {
+  const L = state.live;
+  stopTimer();
+  L.available = false;
+  L.away = label;
+  L.streak = 0;
+  L.showPause = false;
+  L.ping = null; L.result = null;
+  L.scoreNote = "Paused by Aunt Dot. The score is untouched and no pings are sent until Vesper is back.";
+  liveLog(`Aunt Dot paused Vesper's pings ${label}. Saved to Vesper's availability, which Supply also reads.`);
+  render();
+}
+
+function backNow() {
+  const L = state.live;
+  L.available = true;
+  L.away = null;
+  liveLog("Vesper is available again. Pings resume.");
+  render();
+}
+
+function report() {
+  const L = state.live;
+  L.reported = "R-" + (5000 + Math.floor(Math.random() * 999));
+  liveLog(`Aunt Dot reported "Vesper isn't being asked" to Rook (${L.reported}). Vesper's last ${L.areaCallouts} Old Town callouts are attached automatically.`);
+  render();
+}
+
+/* Status: what's wrong, why, and what Aunt Dot can do, in plain words */
+
+function handlerStatus(L) {
+  const missed = L.recent.filter((r) => r.o === "M").slice(-STREAK_PROMPT).map((r) => "#" + r.n).join(", ");
+  if (!L.ack) return {
+    level: "good", icon: "✓", title: "Fixed: Vesper is back in the rotation",
+    what: "From late August Vesper was asked about fewer and fewer Old Town callouts, and none from 2 Sep.",
+    why: "Rook was counting pings that ran out before Vesper answered as if Vesper had said no. Enough of those and Vesper dropped to the bottom of the list. That was our mistake, and it's been corrected today.",
+    actions: `<p class="none-needed">Nothing for you to do. Vesper has been told too.</p>`,
+  };
+  if (!L.available) return {
+    level: "paused", icon: "☾", title: `Paused ${L.away}`,
+    what: "Vesper isn't being sent any pings.",
+    why: "You paused them. This doesn't affect Vesper's place in line.",
+    actions: `<div class="acts"><button class="btn primary" data-act="back">Vesper's back now</button></div>`,
+    tags: tag("F11 · Supply impact"),
+  };
+  if (L.streak >= STREAK_PROMPT) return {
+    level: "warn", icon: "!", title: `Vesper has missed the last ${L.streak} pings`,
+    what: `Pings ${missed} all ran out before Vesper answered. Each one went to the next responder.`,
+    why: `Vesper has ${PING_WAIT} seconds to answer each ping. Missing them doesn't move Vesper down the list, but every miss makes a callout wait a minute. Is Vesper away from the phone?`,
+    actions: L.showPause
+      ? `<div class="acts"><span class="lead">Pause Vesper's pings…</span><button class="btn" data-pause="for 2 hours">for 2 hours</button><button class="btn" data-pause="until 08:00 tomorrow">until 08:00 tomorrow</button><button class="btn" data-pause="until you turn them back on">until I turn them back on</button></div>`
+      : `<div class="acts"><button class="btn primary" data-act="keep">Vesper's around, keep asking</button><button class="btn" data-act="pause">Vesper's away, pause pings</button></div>`,
+    tags: tag("F2 · D2"),
+  };
+  const share = L.areaCallouts ? L.asked / L.areaCallouts : 1;
+  if (L.areaCallouts >= 5 && share < 0.5) return {
+    level: "bad", icon: "?", title: "Vesper isn't being asked, and that isn't normal",
+    what: `Old Town had <b>${L.areaCallouts} callouts</b> this week. Vesper was asked about <b>${L.asked}</b>. Last ping ${L.lastDays} days ago.`,
+    why: "Vesper is marked available and hasn't turned anything down or missed enough to explain it. This is something on Rook's side, not something you or Vesper did.",
+    actions: L.reported
+      ? `<p class="done">Reported to Rook (${L.reported}). Rook has the list of callouts Vesper wasn't asked about. Support will reply here.</p>`
+      : `<div class="acts"><button class="btn primary" data-act="report">Report this to Rook</button></div><p class="hint">Sends the ${L.areaCallouts} Old Town callouts and Vesper's availability with it, so you don't have to explain.</p>`,
+    tags: tag("F1"),
+  };
+  if (L.areaCallouts <= 3 && L.lastDays >= 2) return {
+    level: "neutral", icon: "~", title: "Quiet week in Old Town, nothing wrong",
+    what: `Vesper has had ${L.pingsWeek} ping${L.pingsWeek === 1 ? "" : "s"} this week.`,
+    why: `Old Town only had ${L.areaCallouts} callout${L.areaCallouts === 1 ? "" : "s"}, and Vesper was asked about ${L.asked === L.areaCallouts ? "every one" : L.asked}.`,
+    actions: `<p class="none-needed">Nothing to do.</p>`,
+  };
+  return {
+    level: "good", icon: "✓", title: "Being asked as usual",
+    what: `Vesper has had ${L.pingsWeek} pings this week.`,
+    why: `Old Town had ${L.areaCallouts} callouts and Vesper was asked about ${L.asked === L.areaCallouts ? "every one" : L.asked}.`,
+    actions: `<p class="none-needed">Nothing to do.</p>`,
+  };
+}
+
+function renderLive() {
+  const L = state.live;
+  $("narration").className = "narration fix";
+  const pick = Object.entries(SCENARIOS).map(([k, s], i) =>
+    `<button data-scenario="${k}" aria-pressed="${L.scenario === k}">${i + 1}. ${s.label}</button>`).join("");
+  $("narration").innerHTML = `<strong>Try it from Aunt Dot's seat${tag("F1 · F2 · D2")}</strong>
+    Pick a situation. Aunt Dot's console says what's wrong, why, and what Dot can do, without anyone explaining how routing works. In scenario 1, tap <em>Got it</em> on Vesper's phone to start sending pings.
+    <div class="seg sub scen" role="group" aria-label="Situation">${pick}</div>`;
+  renderLivePhone();
+  renderLiveConsole();
+  renderChart(9);
+  $("facts").innerHTML = `
+    <div><span>Vesper's score now</span><b>${L.score.toFixed(2)}</b></div>
+    <div><span>Misses in a row</span><b>${L.streak}</b></div>
+    <div style="display:block"><span>${esc(L.scoreNote)}</span></div>`;
+}
+
+function renderLivePhone() {
+  const L = state.live;
+  $("clock").textContent = "today";
+  $("phonePill").className = "pill" + (L.available ? "" : " off");
+  $("phonePill").textContent = L.available ? "Available · Old Town" : "Paused by Aunt Dot";
+  let html = "";
+  if (!L.ack) {
+    html += `<div class="card notice"><b>Your missed pings were counting against you by mistake.</b><br>That's been corrected, and you're back in the rotation. Missing a ping no longer works like saying no. The ${PING_WAIT}-second answer window hasn't changed yet.${tag("D5 · F5")}
+      <div class="btn-row" style="margin-top:10px"><button class="btn" data-ack>Got it</button></div></div>`;
+  } else if (L.ping) {
+    const p = L.ping;
+    const C = 2 * Math.PI * 22;
+    const off = C * (1 - p.left / PING_WAIT);
+    html += `<div class="card ping">
+      <div class="meta">Callout #${p.callout} · ${esc(p.area)}</div>
+      <h3>${esc(p.what)}</h3>
+      <div class="ring">
+        <svg viewBox="0 0 52 52" aria-hidden="true"><circle class="track" cx="26" cy="26" r="22" fill="none" stroke-width="5"/><circle class="bar" cx="26" cy="26" r="22" fill="none" stroke-width="5" stroke-dasharray="${C}" stroke-dashoffset="${off}"/></svg>
+        <div><span class="secs">${p.left}s</span><small>to answer${tag("F5")}</small></div>
+      </div>
+      <div class="btn-row"><button class="btn primary" data-answer="taken">Take it</button><button class="btn" data-answer="turned">Turn down</button></div>
+    </div>
+    <button class="btn ghost" data-answer="missed">Let it run out (miss)</button>`;
+  } else if (!L.available) {
+    html += `<div class="empty"><div class="big">☾</div>Aunt Dot has paused your pings ${esc(L.away)}.<br><span style="font-size:13px">This doesn't affect your place in line.</span></div>`;
+  } else if (L.result) {
+    const n = L.result.callout;
+    const m = {
+      taken: ["✓", "It's yours.", `Callout #${n} is on your board.`],
+      turned: ["↷", "Turned down.", `#${n} has gone to the next responder.`],
+      missed: ["⏱", "Missed. It's gone to the next responder.", "Missing a ping doesn't work like saying no."],
+    }[L.result.kind];
+    html += `<div class="card result ${L.result.kind}"><div class="big">${m[0]}</div><b>${m[1]}</b><br>${m[2]}</div>`;
+  } else if (L.scenario === "notasked") {
+    html += `<div class="empty"><div class="big">…</div>No pings for ${L.lastDays} days.<br><span style="font-size:13px">${L.reported ? "Aunt Dot has reported this to Rook. You'll hear back here." : "You're marked available."}</span></div>`;
+  } else {
+    html += `<div class="empty"><div class="big">✓</div>You're in the rotation.</div>`;
+  }
+  if (L.ack) {
+    html += `<div class="phone-actions">`;
+    if (!L.available) html += `<button class="btn" data-act="back">I'm back</button>`;
+    else if (!L.ping) html += `<button class="btn primary" data-send>Send the next ping</button>`;
+    if (L.available && L.streak < STREAK_PROMPT) html += `<button class="btn ghost" data-simulate>Skip ahead: miss ${STREAK_PROMPT} in a row</button>`;
+    html += `</div>`;
+  }
+  $("phoneBody").innerHTML = html;
+}
+
+function renderLiveConsole() {
+  const L = state.live;
+  const s = handlerStatus(L);
+  $("consoleSub").textContent = "Roster · this week";
+  const last = L.lastDays >= 3 ? `<div class="stat"><div class="n quiet">${L.lastDays}d</div><div class="l">since last ping</div></div>` : "";
+  $("card").innerHTML = `<div class="rcard" id="vcard">
+    <div class="row"><div><div class="name">Vesper</div><div class="area">Old Town</div></div>
+      <span class="pill ${L.available ? "" : "off"}">${L.available ? "Available" : "Paused"}</span></div>
+    <div class="status s-${s.level}">
+      <div class="s-title"><span class="s-icon" aria-hidden="true">${s.icon}</span>${s.title}${s.tags || ""}</div>
+      <dl>
+        <dt>What's happening</dt><dd>${s.what}</dd>
+        <dt>Why</dt><dd>${s.why}</dd>
+        <dt>What you can do</dt><dd>${s.actions}</dd>
+      </dl>
+    </div>
+    <div class="stats">
+      <div class="stat"><div class="n">${L.pingsWeek}</div><div class="l">pings this week</div></div>
+      <div class="stat"><div class="n">${L.asked}<span class="of"> of ${L.areaCallouts}</span></div><div class="l">Old Town callouts Vesper was asked about</div></div>
+      ${last}
+    </div>
+  </div>`;
+  $("feedTitle").textContent = "Activity";
+  $("feed").innerHTML = L.feed.length
+    ? L.feed.map((i) => `<li><time>${i.t}</time><span>${esc(i.text)}</span></li>`).join("")
+    : `<li class="none">Nothing yet.</li>`;
+}
+
+function flashCard() {
+  const el = $("vcard");
+  if (!el) return;
+  el.classList.remove("flash"); void el.offsetWidth; el.classList.add("flash");
+}
+
+/* ---------- shell ---------- */
+
+function render() {
+  document.querySelectorAll("#parts button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.part === state.part)));
+  const cmp = state.part === "compare";
+  $("weekbar").hidden = state.part !== "story";
+  $("compare").hidden = !cmp;
+  ["narration", "stage", "bts"].forEach((id) => { $(id).hidden = cmp; });
+  if (cmp) renderCompare();
+  else if (state.part === "story") renderStory();
+  else renderLive();
+}
+
+function renderCompare() {
+  const row = (w, asked, estimate) => {
+    const total = w.oldTown[0];
+    let dots = "";
+    for (let i = 0; i < total; i++) dots += `<span class="d ${i < asked ? (estimate ? "e" : "y") : ""}"></span>`;
+    return `<div class="wk"><span>${w.label}</span><span class="dots">${dots}</span><span class="n">${estimate ? "≈" : ""}${asked} of ${total}</span></div>`;
+  };
+  $("stripToday").innerHTML = WEEKS.map((w) => row(w, w.oldTown[1], false)).join("");
+  $("stripFix").innerHTML = WEEKS.map((w, i) => row(w, i === 0 ? w.oldTown[1] : w.oldTown[0], i > 0)).join("");
+}
+
+function setPart(part) {
+  stopTimer();
+  state.part = part;
+  if (part === "live") setScenario("fix");
+  else render();
+}
+
+$("weeks").innerHTML = WEEKS.map((w, i) => `<button data-week="${i}">${w.label}${w.rel ? `<span class="rel">${w.rel}</span>` : ""}</button>`).join("");
+
+document.addEventListener("click", (e) => {
+  const t = e.target.closest("button");
+  if (!t) return;
+  const L = state.live;
+  if (t.dataset.part) setPart(t.dataset.part);
+  else if (t.dataset.week) { state.week = +t.dataset.week; render(); }
+  else if (t.dataset.rules) { state.rules = t.dataset.rules; render(); }
+  else if (t.hasAttribute("data-ack")) { L.ack = true; sendPing(); }
+  else if (t.dataset.answer && L.ping) answer(t.dataset.answer);
+  else if (t.hasAttribute("data-send")) sendPing();
+  else if (t.hasAttribute("data-simulate")) simulateMisses();
+  else if (t.dataset.scenario) setScenario(t.dataset.scenario);
+  else if (t.dataset.pause) pauseUntil(t.dataset.pause);
+  else if (t.dataset.act === "keep") keepAsking();
+  else if (t.dataset.act === "pause") { L.showPause = true; render(); }
+  else if (t.dataset.act === "back") backNow();
+  else if (t.dataset.act === "report") report();
+});
+
+document.addEventListener("keydown", (e) => {
+  if (state.part !== "story" || e.target.closest("input")) return;
+  if (e.key === "ArrowRight" && state.week < WEEKS.length - 1) { state.week++; render(); }
+  if (e.key === "ArrowLeft" && state.week > 0) { state.week--; render(); }
+});
+
+$("refs").addEventListener("change", (e) => document.body.classList.toggle("hide-refs", !e.target.checked));
+
+render();
+</script>
+</body>
+</html>
